@@ -14,6 +14,9 @@ export class UsuarioEntity {
   @Column({ type: 'varchar', length: 150, nullable: false })
   nome!: string;
 
+  @Column({ type: 'varchar', length: 20, nullable: false })
+  cpf!: string;
+
   @Column({ type: 'varchar', length: 150, unique: true, nullable: false })
   email!: string;
 
