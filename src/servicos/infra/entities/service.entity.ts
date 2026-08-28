@@ -2,7 +2,7 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { AgendamentoEntity } from '../../../agendamentos/infra/entities/agendamento.entity';
 import { MessageEntity } from '../../../messages/infra/entities/message.entity';
 
-@Entity({ name: 'service', schema: 'sci_schema' })
+@Entity({ name: 'service' })
 export class ServiceEntity {
   @PrimaryGeneratedColumn()
   id: number;

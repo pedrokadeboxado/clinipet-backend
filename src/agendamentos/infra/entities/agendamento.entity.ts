@@ -8,7 +8,7 @@ import {
 import { PetEntity } from '../../../pets/infra/entities/pet.entity';
 import { ServiceEntity } from '../../../servicos/infra/entities/service.entity';
 
-@Entity({ name: 'agendamentos', schema: 'sci_schema' })
+@Entity({ name: 'agendamentos' })
 export class AgendamentoEntity {
   @PrimaryGeneratedColumn()
   id: number;

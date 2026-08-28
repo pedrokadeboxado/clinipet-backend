@@ -2,7 +2,7 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { PetEntity } from '../../../pets/infra/entities/pet.entity';
 import { MessageEntity } from '../../../messages/infra/entities/message.entity';
 
-@Entity({ name: 'tutores', schema: 'sci_schema' })
+@Entity({ name: 'tutores' })
 export class TutorEntity {
   @PrimaryGeneratedColumn()
   id: number;

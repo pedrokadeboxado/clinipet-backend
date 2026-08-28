@@ -10,7 +10,7 @@ import { TutorEntity } from '../../../tutores/infra/entities/tutor.entity';
 import { AgendamentoEntity } from '../../../agendamentos/infra/entities/agendamento.entity';
 import { PetVacinaEntity } from '../../../petVacina/infra/entities/petVacina.entity';
 
-@Entity({ name: 'pets', schema: 'sci_schema' })
+@Entity({ name: 'pets' })
 export class PetEntity {
   @PrimaryGeneratedColumn()
   id: number;

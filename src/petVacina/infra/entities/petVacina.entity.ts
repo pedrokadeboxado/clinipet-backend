@@ -10,7 +10,7 @@ import { PetEntity } from '../../../pets/infra/entities/pet.entity';
 import { VacinaEntity } from '../../../vacinas/infra/entities/vacina.entity';
 import { MessageEntity } from '../../../messages/infra/entities/message.entity';
 
-@Entity({ name: 'pet_vacina', schema: 'sci_schema' })
+@Entity({ name: 'pet_vacina' })
 export class PetVacinaEntity {
   @PrimaryGeneratedColumn()
   id: number;

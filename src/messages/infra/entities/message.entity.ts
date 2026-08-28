@@ -9,7 +9,7 @@ import { TutorEntity } from '../../../tutores/infra/entities/tutor.entity';
 import { ServiceEntity } from '../../../servicos/infra/entities/service.entity';
 import { PetVacinaEntity } from '../../../petVacina/infra/entities/petVacina.entity';
 
-@Entity({ name: 'messages', schema: 'sci_schema' })
+@Entity({ name: 'messages' })
 export class MessageEntity {
   @PrimaryGeneratedColumn()
   id: number;
