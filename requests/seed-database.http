@@ -1,0 +1,91 @@
+@baseUrl = http://localhost:3000
+
+### Criar administrador
+# @name createAdmin
+POST {{baseUrl}}/admin
+Content-Type: application/json
+
+{
+  "nome": "Administrador de demonstração",
+  "senha": "Trocar-Esta-Senha-123!"
+}
+
+### Criar tutor
+# @name createTutor
+POST {{baseUrl}}/tutores
+Content-Type: application/json
+
+{
+  "nome": "Tutor de demonstração"
+}
+
+### Criar pet vinculado ao tutor criado acima
+# @name createPet
+POST {{baseUrl}}/pets
+Content-Type: application/json
+
+{
+  "nome": "Luna",
+  "raca": "SRD",
+  "id_tutor": {{createTutor.response.body.$.id}}
+}
+
+### Criar vacina
+# @name createVacina
+POST {{baseUrl}}/vacinas
+Content-Type: application/json
+
+{
+  "vacina": "Antirrábica",
+  "fabricante": "Fabricante de demonstração"
+}
+
+### Criar serviço
+# @name createService
+POST {{baseUrl}}/services
+Content-Type: application/json
+
+{
+  "servico": "Consulta veterinária",
+  "duracao_min": "30",
+  "valor": "120.00"
+}
+
+### Criar usuário
+# @name createUsuario
+# Altere o email caso este exemplo já tenha sido cadastrado, pois ele é único.
+POST {{baseUrl}}/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Usuário de demonstração",
+  "cpf": "12345678901",
+  "email": "usuario.demo@example.com",
+  "senha": "Trocar-Esta-Senha-123!",
+  "role": "admin",
+  "ativo": true
+}
+
+### Registrar aplicação da vacina no pet criado acima
+# @name createPetVacina
+POST {{baseUrl}}/pet-vacina
+Content-Type: application/json
+
+{
+  "data_aplicacao": "2026-10-27",
+  "data_proxima_dose": "2027-10-27",
+  "id_pet": {{createPet.response.body.$.id}},
+  "id_vacina": {{createVacina.response.body.$.id}}
+}
+
+### Agendar o serviço para o pet criado acima
+# @name createAgendamento
+POST {{baseUrl}}/agendamentos
+Content-Type: application/json
+
+{
+  "data_hora": "2026-11-02",
+  "status": "agendado",
+  "id_pet": {{createPet.response.body.$.id}},
+  "id_servico": {{createService.response.body.$.id}}
+}

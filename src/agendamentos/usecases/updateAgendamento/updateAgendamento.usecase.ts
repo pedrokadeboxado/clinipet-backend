@@ -1,4 +1,4 @@
-import { Inject } from '@nestjs/common';
+import { Inject, NotFoundException } from '@nestjs/common';
 import { UpdateAgendamentoDto } from '../../models/dto/updateAgendamento.dto';
 import { FindOneAgendamentoByIdUseCase } from '../findOneAgendamentoById/findOneAgendamentoById.usecase';
 import type { AgendamentoRepositoryInterface } from '../../models/interface/agendamentoRepositoryInterface';
@@ -10,6 +10,10 @@ export class UpdateAgendamentoUseCase {
   ) {}
   async execute(id: number, data: UpdateAgendamentoDto) {
     await this.findOne.execute(id);
-    return this.repository.update(id, data);
+    const updatedAgendamento = await this.repository.update(id, data);
+    if (!updatedAgendamento) {
+      throw new NotFoundException('Agendamento não encontrado');
+    }
+    return updatedAgendamento;
   }
 }

@@ -32,10 +32,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
                 ? (errorResponse as { message?: string | string[] }).message ?? 'Erro inesperado'
                 : errorResponse;
 
-        this.logger.error(
-            `HTTP ${status} - ${request.method} ${request.url} - ${typeof message === 'string' ? message : JSON.stringify(message)}`,
-            exception instanceof Error ? exception.stack : undefined,
-        );
+        const logMessage = `HTTP ${status} - ${request.method} ${request.url} - ${typeof message === 'string' ? message : JSON.stringify(message)}`;
+        if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
+            this.logger.error(
+                logMessage,
+                exception instanceof Error ? exception.stack : undefined,
+            );
+        } else {
+            this.logger.warn(logMessage);
+        }
 
         response.status(status).json({
             statusCode: status,
