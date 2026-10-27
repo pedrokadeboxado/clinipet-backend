@@ -9,7 +9,7 @@ export class ServiceTypeOrmRepository implements ServiceRepositoryInterface {
     private readonly repository: Repository<ServiceEntity>,
   ) {}
   listAll() {
-    return this.repository.find({ relations: ['agendamentos', 'messages'] });
+    return this.repository.find({ relations: ['agendamentos'] });
   }
   create(data: Partial<ServiceEntity>) {
     return this.repository.save(this.repository.create(data));
@@ -17,7 +17,7 @@ export class ServiceTypeOrmRepository implements ServiceRepositoryInterface {
   findOneBy(id: number) {
     return this.repository.findOne({
       where: { id },
-      relations: ['agendamentos', 'messages'],
+      relations: ['agendamentos'],
     });
   }
   async update(id: number, data: Partial<ServiceEntity>) {
