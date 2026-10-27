@@ -1,6 +1,5 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { AgendamentoEntity } from '../../../agendamentos/infra/entities/agendamento.entity';
-import { MessageEntity } from '../../../messages/infra/entities/message.entity';
 
 @Entity({ name: 'service' })
 export class ServiceEntity {
@@ -18,7 +17,4 @@ export class ServiceEntity {
 
   @OneToMany(() => AgendamentoEntity, (agendamento) => agendamento.service)
   agendamentos: AgendamentoEntity[];
-
-  @OneToMany(() => MessageEntity, (message) => message.service)
-  messages: MessageEntity[];
 }

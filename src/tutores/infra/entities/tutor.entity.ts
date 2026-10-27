@@ -1,6 +1,5 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { PetEntity } from '../../../pets/infra/entities/pet.entity';
-import { MessageEntity } from '../../../messages/infra/entities/message.entity';
 
 @Entity({ name: 'tutores' })
 export class TutorEntity {
@@ -13,6 +12,6 @@ export class TutorEntity {
   @OneToMany(() => PetEntity, (pet) => pet.tutor)
   pets: PetEntity[];
 
-  @OneToMany(() => MessageEntity, (message) => message.tutor)
-  messages: MessageEntity[];
+  // Relação de mensagens temporariamente removida porque o módulo MessagesModule
+  // está comentado e a entidade MessageEntity não está sendo registrada no TypeORM.
 }

@@ -13,11 +13,8 @@ export class AgendamentoEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'date' })
-  horario: string;
-
   @Column({ name: 'data_hora', type: 'date' })
-  data_hora: string;
+  data_hora: Date;
 
   @Column({ type: 'varchar' })
   status: string;

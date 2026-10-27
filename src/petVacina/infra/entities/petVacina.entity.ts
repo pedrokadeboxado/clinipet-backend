@@ -16,10 +16,10 @@ export class PetVacinaEntity {
   id: number;
 
   @Column({ name: 'data_aplicacao', type: 'date' })
-  data_aplicacao: string;
+  data_aplicacao: Date
 
   @Column({ name: 'data_proxima_dose', type: 'date' })
-  data_proxima_dose: string;
+  data_proxima_dose: Date;
 
   @ManyToOne(() => PetEntity, (pet) => pet.petVacinas, {
     nullable: false,

@@ -1,6 +1,9 @@
 import { Body, Controller, Param, ParseIntPipe, Patch } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { UpdateAgendamentoUseCase } from './updateAgendamento.usecase';
 import { UpdateAgendamentoDto } from '../../models/dto/updateAgendamento.dto';
+
+@ApiTags('Agendamentos')
 @Controller('agendamentos')
 export class UpdateAgendamentoController {
   constructor(private readonly useCase: UpdateAgendamentoUseCase) {}

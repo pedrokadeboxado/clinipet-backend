@@ -1,5 +1,7 @@
 import { Controller, Delete, Param, ParseIntPipe } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { DeleteServiceUseCase } from './deleteService.usecase';
+@ApiTags('Serviços')
 @Controller('services')
 export class DeleteServiceController {
   constructor(private readonly useCase: DeleteServiceUseCase) {}
