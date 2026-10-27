@@ -6,7 +6,7 @@ import { UpdateAdminDto } from '../../models/dto/updateAdmin.dto';
 @ApiTags('Admin')
 @Controller('admin')
 export class UpdateAdminController {
-  constructor(private readonly useCase: UpdateAdminUseCase) {}
+  constructor(private readonly useCase: UpdateAdminUseCase) { }
 
   @Patch(':id')
   handle(@Param('id') id: string, @Body() data: UpdateAdminDto) {

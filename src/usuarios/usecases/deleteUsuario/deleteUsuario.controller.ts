@@ -5,7 +5,7 @@ import { DeleteUsuarioUseCase } from './deleteUsuario.usecase';
 @ApiTags('Usuarios')
 @Controller('usuarios')
 export class DeleteUsuarioController {
-  constructor(private readonly useCase: DeleteUsuarioUseCase) {}
+  constructor(private readonly useCase: DeleteUsuarioUseCase) { }
 
   @Delete(':id')
   handle(@Param('id') id: string) {

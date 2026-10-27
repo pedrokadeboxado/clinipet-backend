@@ -5,7 +5,7 @@ import { ListAllPetVacinasUseCase } from './listAllPetVacinas.usecase';
 @ApiTags('PetVacina')
 @Controller('pet-vacina')
 export class ListAllPetVacinasController {
-  constructor(private readonly useCase: ListAllPetVacinasUseCase) {}
+  constructor(private readonly useCase: ListAllPetVacinasUseCase) { }
 
   @Get()
   handle() {

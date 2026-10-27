@@ -6,7 +6,7 @@ import { CreateAdminDto } from '../../models/dto/createAdmin.dto';
 @ApiTags('Admin')
 @Controller('admin')
 export class CreateAdminController {
-  constructor(private readonly useCase: CreateAdminUseCase) {}
+  constructor(private readonly useCase: CreateAdminUseCase) { }
   @Post()
   handle(@Body() data: CreateAdminDto) {
     return this.useCase.execute(data);

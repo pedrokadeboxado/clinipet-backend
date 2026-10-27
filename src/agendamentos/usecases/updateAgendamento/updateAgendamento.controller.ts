@@ -6,7 +6,7 @@ import { UpdateAgendamentoDto } from '../../models/dto/updateAgendamento.dto';
 @ApiTags('Agendamentos')
 @Controller('agendamentos')
 export class UpdateAgendamentoController {
-  constructor(private readonly useCase: UpdateAgendamentoUseCase) {}
+  constructor(private readonly useCase: UpdateAgendamentoUseCase) { }
   @Patch(':id') handle(
     @Param('id', ParseIntPipe) id: number,
     @Body() data: UpdateAgendamentoDto,

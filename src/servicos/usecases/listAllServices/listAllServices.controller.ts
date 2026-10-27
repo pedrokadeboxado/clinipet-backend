@@ -5,7 +5,7 @@ import { ListAllServicesUseCase } from './listAllServices.usecase';
 @ApiTags('Serviços')
 @Controller('services')
 export class ListAllServicesController {
-  constructor(private readonly useCase: ListAllServicesUseCase) {}
+  constructor(private readonly useCase: ListAllServicesUseCase) { }
 
   @Get()
   handle() {

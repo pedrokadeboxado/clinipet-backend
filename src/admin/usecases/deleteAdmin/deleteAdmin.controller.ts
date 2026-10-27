@@ -5,7 +5,7 @@ import { DeleteAdminUseCase } from './deleteAdmin.usecase';
 @ApiTags('Admin')
 @Controller('admin')
 export class DeleteAdminController {
-  constructor(private readonly useCase: DeleteAdminUseCase) {}
+  constructor(private readonly useCase: DeleteAdminUseCase) { }
 
   @Delete(':id')
   handle(@Param('id') id: string) {

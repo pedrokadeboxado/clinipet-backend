@@ -6,7 +6,7 @@ import { UpdatePetVacinaDto } from '../../models/dto/updatePetVacina.dto';
 @ApiTags('PetVacina')
 @Controller('pet-vacina')
 export class UpdatePetVacinaController {
-  constructor(private readonly useCase: UpdatePetVacinaUseCase) {}
+  constructor(private readonly useCase: UpdatePetVacinaUseCase) { }
 
   @Patch(':id')
   handle(@Param('id') id: string, @Body() data: UpdatePetVacinaDto) {

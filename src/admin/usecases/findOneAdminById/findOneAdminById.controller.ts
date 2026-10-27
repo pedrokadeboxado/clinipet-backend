@@ -5,7 +5,7 @@ import { FindOneAdminByIdUseCase } from './findOneAdminById.usecase';
 @ApiTags('Admin')
 @Controller('admin')
 export class FindOneAdminByIdController {
-  constructor(private readonly useCase: FindOneAdminByIdUseCase) {}
+  constructor(private readonly useCase: FindOneAdminByIdUseCase) { }
 
   @Get(':id')
   handle(@Param('id') id: string) {

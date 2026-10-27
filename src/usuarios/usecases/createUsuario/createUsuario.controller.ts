@@ -6,7 +6,7 @@ import { CreateUsuarioDto } from '../../models/dto/createUsuario.dto';
 @ApiTags('Usuarios')
 @Controller('usuarios')
 export class CreateUsuarioController {
-  constructor(private readonly useCase: CreateUsuarioUseCase) {}
+  constructor(private readonly useCase: CreateUsuarioUseCase) { }
 
   @Post()
   handle(@Body() data: CreateUsuarioDto) {

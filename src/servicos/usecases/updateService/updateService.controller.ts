@@ -6,7 +6,7 @@ import { UpdateServiceDto } from '../../models/dto/updateService.dto';
 @ApiTags('Serviços')
 @Controller('services')
 export class UpdateServiceController {
-  constructor(private readonly useCase: UpdateServiceUseCase) {}
+  constructor(private readonly useCase: UpdateServiceUseCase) { }
 
   @Patch(':id')
   handle(@Param('id') id: string, @Body() data: UpdateServiceDto) {

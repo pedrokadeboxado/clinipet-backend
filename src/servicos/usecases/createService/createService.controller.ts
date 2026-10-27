@@ -6,7 +6,7 @@ import { CreateServiceDto } from '../../models/dto/createService.dto';
 @ApiTags('Serviços')
 @Controller('services')
 export class CreateServiceController {
-  constructor(private readonly useCase: CreateServiceUseCase) {}
+  constructor(private readonly useCase: CreateServiceUseCase) { }
   @Post() handle(@Body() data: CreateServiceDto) {
     return this.useCase.execute(data);
   }
