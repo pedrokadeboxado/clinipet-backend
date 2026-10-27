@@ -22,6 +22,11 @@ export class CreateUsuarioDto {
 
   @ApiProperty()
   @IsString()
+  @MaxLength(20)
+  cpf!: string;
+
+  @ApiProperty()
+  @IsString()
   @MaxLength(255)
   senha!: string;
 
