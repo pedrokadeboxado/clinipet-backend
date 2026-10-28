@@ -9,6 +9,7 @@ import {
 import { TutorEntity } from '../../../tutores/infra/entities/tutor.entity';
 import { AgendamentoEntity } from '../../../agendamentos/infra/entities/agendamento.entity';
 import { PetVacinaEntity } from '../../../petVacina/infra/entities/petVacina.entity';
+import { EspeciePet } from '../../models/enum/especiePet.enum';
 
 @Entity({ name: 'pets' })
 export class PetEntity {
@@ -20,6 +21,9 @@ export class PetEntity {
 
   @Column({ type: 'varchar' })
   nome: string;
+
+  @Column({ type: 'enum', enum: EspeciePet, nullable: true })
+  especie!: EspeciePet | null;
 
   @ManyToOne(() => TutorEntity, (tutor) => tutor.pets, {
     nullable: false,

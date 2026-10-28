@@ -9,6 +9,12 @@ export class TutorEntity {
   @Column({ type: 'varchar' })
   nome: string;
 
+  @Column({ type: 'varchar', length: 150, nullable: true })
+  email: string | null;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  telefone: string | null;
+
   @OneToMany(() => PetEntity, (pet) => pet.tutor)
   pets: PetEntity[];
 
