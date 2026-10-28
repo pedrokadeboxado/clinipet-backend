@@ -34,6 +34,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
         const logMessage = `HTTP ${status} - ${request.method} ${request.url} - ${typeof message === 'string' ? message : JSON.stringify(message)}`;
 
+        if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
+            this.logger.error(logMessage, exception instanceof Error ? exception.stack : undefined);
         } else {
             this.logger.warn(logMessage);
         }
