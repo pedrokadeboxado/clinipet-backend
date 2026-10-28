@@ -1,4 +1,4 @@
-import { Inject } from '@nestjs/common';
+import { Inject, NotFoundException } from '@nestjs/common';
 import { UpdateAdminDto } from '../../models/dto/updateAdmin.dto';
 import { FindOneAdminByIdUseCase } from '../findOneAdminById/findOneAdminById.usecase';
 import type { AdminRepositoryInterface } from '../../models/interface/adminRepositoryInterface';
@@ -10,6 +10,8 @@ export class UpdateAdminUseCase {
   ) {}
   async execute(id: number, data: UpdateAdminDto) {
     await this.findOne.execute(id);
-    return this.repository.update(id, data);
+    const updatedAdmin = await this.repository.update(id, data);
+    if (!updatedAdmin) throw new NotFoundException('Admin não encontrado');
+    return updatedAdmin;
   }
 }

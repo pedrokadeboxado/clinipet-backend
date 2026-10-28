@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Patch } from '@nestjs/common';
+import { Body, Controller, Param, ParseIntPipe, Patch } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { UpdateUsuarioUseCase } from './updateUsuario.usecase';
 import { UpdateUsuarioDto } from '../../models/dto/updateUsuario.dto';
@@ -9,7 +9,10 @@ export class UpdateUsuarioController {
   constructor(private readonly useCase: UpdateUsuarioUseCase) { }
 
   @Patch(':id')
-  handle(@Param('id') id: string, @Body() data: UpdateUsuarioDto) {
-    return this.useCase.execute(Number(id), data);
+  handle(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: UpdateUsuarioDto,
+  ) {
+    return this.useCase.execute(id, data);
   }
 }

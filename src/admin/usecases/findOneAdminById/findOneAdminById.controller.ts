@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { FindOneAdminByIdUseCase } from './findOneAdminById.usecase';
 
@@ -8,7 +8,7 @@ export class FindOneAdminByIdController {
   constructor(private readonly useCase: FindOneAdminByIdUseCase) { }
 
   @Get(':id')
-  handle(@Param('id') id: string) {
-    return this.useCase.execute(Number(id));
+  handle(@Param('id', ParseIntPipe) id: number) {
+    return this.useCase.execute(id);
   }
 }

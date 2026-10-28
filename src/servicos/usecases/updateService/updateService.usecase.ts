@@ -1,4 +1,4 @@
-import { Inject } from '@nestjs/common';
+import { Inject, NotFoundException } from '@nestjs/common';
 import { UpdateServiceDto } from '../../models/dto/updateService.dto';
 import { FindOneServiceByIdUseCase } from '../findOneServiceById/findOneServiceById.usecase';
 import type { ServiceRepositoryInterface } from '../../models/interface/serviceRepositoryInterface';
@@ -10,6 +10,8 @@ export class UpdateServiceUseCase {
   ) {}
   async execute(id: number, data: UpdateServiceDto) {
     await this.findOne.execute(id);
-    return this.repository.update(id, data);
+    const updatedService = await this.repository.update(id, data);
+    if (!updatedService) throw new NotFoundException('Serviço não encontrado');
+    return updatedService;
   }
 }
