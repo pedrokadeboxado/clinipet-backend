@@ -10,6 +10,7 @@ import { PetVacinaModule } from './petVacina/petVacina.module';
 import { AgendamentosModule } from './agendamentos/agendamentos.module';
 import { ServicesModule } from './servicos/services.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
+import { RacasModule } from './racas/racas.module';
 
 @Module({
   imports: [
@@ -34,7 +35,9 @@ import { UsuariosModule } from './usuarios/usuarios.module';
           password: dbPassword,
           database: configService.get<string>('DB_DATABASE'),
           autoLoadEntities: true,
-          synchronize: true,
+          synchronize: false,
+          migrations: [__dirname + '/database/migrations/*.{ts,js}'],
+          migrationsRun: true,
         };
       },
     }),
@@ -47,6 +50,7 @@ import { UsuariosModule } from './usuarios/usuarios.module';
     ServicesModule,
     // MessagesModule,
     UsuariosModule,
+    RacasModule,
   ],
   providers: [AppService],
 })

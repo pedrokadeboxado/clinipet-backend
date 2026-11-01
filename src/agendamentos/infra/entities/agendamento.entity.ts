@@ -16,8 +16,8 @@ export class AgendamentoEntity {
   @Column({ name: 'data_hora', type: 'date' })
   data_hora: Date;
 
-  @Column({ type: 'varchar' })
-  status: string;
+  @Column({ type: 'varchar', default: 'pendente', nullable: true })
+  status?: string;
 
   @ManyToOne(() => PetEntity, (pet) => pet.agendamentos, {
     nullable: false,

@@ -7,6 +7,7 @@ import {
     Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { QueryFailedError } from 'typeorm';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -17,15 +18,23 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const response = ctx.getResponse<Response>();
         const request = ctx.getRequest<Request>();
 
+        const isForeignKeyViolation =
+            exception instanceof QueryFailedError &&
+            (exception as QueryFailedError & { driverError?: { code?: string } }).driverError?.code === '23503';
+
         const status =
             exception instanceof HttpException
                 ? exception.getStatus()
-                : HttpStatus.INTERNAL_SERVER_ERROR;
+                : isForeignKeyViolation
+                  ? HttpStatus.BAD_REQUEST
+                  : HttpStatus.INTERNAL_SERVER_ERROR;
 
         const errorResponse =
             exception instanceof HttpException
                 ? exception.getResponse()
-                : { message: 'Erro interno do servidor' };
+                : isForeignKeyViolation
+                  ? { message: 'Registro relacionado não encontrado (verifique os IDs informados)' }
+                  : { message: 'Erro interno do servidor' };
 
         const message =
             typeof errorResponse === 'object' && errorResponse !== null
