@@ -75,6 +75,18 @@ expira em 15 minutos e deve ser entregue ao tutor; ele deve iniciar uma conversa
 com o bot e enviar o código. O código é de uso único e apenas seu hash é
 armazenado no banco.
 
+### Avisos automáticos
+
+A cada minuto o backend envia aos tutores vinculados:
+
+- **Lembrete** de agendamento próximo, `TELEGRAM_LEMBRETE_ANTECEDENCIA_MIN`
+  minutos antes do horário (padrão: 60).
+- **Aviso de retirada** quando `data_hora` + `duracao_min` do serviço é atingido
+  (ex.: 10:00 com serviço de 30 min → aviso às 10:30).
+
+Agendamentos com status `cancelado` ou `concluido` não geram avisos. Para isso,
+`data_hora` deve ser enviada com horário (ex.: `2026-11-03T10:00:00-03:00`) e
+`duracao_min` do serviço deve ser um número de minutos.
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.

@@ -152,7 +152,7 @@ export class TelegramService {
     );
   }
 
-  private async enviarMensagem(chatId: string, text: string): Promise<void> {
+  async enviarMensagem(chatId: string, text: string): Promise<void> {
     const token = this.config.get<string>('TELEGRAM_BOT_TOKEN');
     if (!token) {
       throw new InternalServerErrorException(

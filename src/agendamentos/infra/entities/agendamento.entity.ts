@@ -13,8 +13,14 @@ export class AgendamentoEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'data_hora', type: 'date' })
+  @Column({ name: 'data_hora', type: 'timestamptz' })
   data_hora: Date;
+
+  @Column({ name: 'lembrete_enviado_em', type: 'timestamptz', nullable: true })
+  lembrete_enviado_em: Date | null;
+
+  @Column({ name: 'pronto_enviado_em', type: 'timestamptz', nullable: true })
+  pronto_enviado_em: Date | null;
 
   @Column({ type: 'varchar', default: 'pendente', nullable: true })
   status?: string;
