@@ -11,6 +11,7 @@ import { AgendamentosModule } from './agendamentos/agendamentos.module';
 import { ServicesModule } from './servicos/services.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { RacasModule } from './racas/racas.module';
+import { TelegramModule } from './telegram/telegram.module';
 
 @Module({
   imports: [
@@ -24,7 +25,9 @@ import { RacasModule } from './racas/racas.module';
         const dbPassword = configService.get<string>('DB_PASSWORD');
 
         if (!dbPassword) {
-          throw new Error('DB_PASSWORD is missing. Check the .env file at the project root or under test/.env.');
+          throw new Error(
+            'DB_PASSWORD is missing. Check the .env file at the project root or under test/.env.',
+          );
         }
 
         return {
@@ -51,7 +54,8 @@ import { RacasModule } from './racas/racas.module';
     // MessagesModule,
     UsuariosModule,
     RacasModule,
+    TelegramModule,
   ],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

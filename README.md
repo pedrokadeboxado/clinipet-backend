@@ -57,6 +57,24 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## Vincular um tutor ao Telegram
+
+Configure `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` e
+`TELEGRAM_LINKING_SECRET` no ambiente do backend. Não use esses segredos no
+frontend nem os versione no repositório. A migração adiciona o armazenamento do
+chat e do hash do código temporário; aplique-a antes de iniciar essa integração.
+
+Configure o webhook do bot para apontar para
+`https://<dominio-da-api>/telegram/webhook`, usando o mesmo valor de
+`TELEGRAM_WEBHOOK_SECRET` como segredo do webhook do Telegram.
+
+Para vincular um tutor, uma ferramenta interna confiável deve chamar
+`POST /telegram/tutores/:tutorId/codigo-vinculacao` com o cabeçalho
+`x-telegram-linking-secret` igual a `TELEGRAM_LINKING_SECRET`. O código retornado
+expira em 15 minutos e deve ser entregue ao tutor; ele deve iniciar uma conversa
+com o bot e enviar o código. O código é de uso único e apenas seu hash é
+armazenado no banco.
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
