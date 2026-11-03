@@ -22,9 +22,21 @@ describe('TelegramService', () => {
     update: jest.Mock;
   };
   let httpService: { post: jest.Mock };
+  let mensagemRepository: {
+    create: jest.Mock;
+    save: jest.Mock;
+    update: jest.Mock;
+    findOne: jest.Mock;
+  };
   let service: TelegramService;
 
   beforeEach(() => {
+    mensagemRepository = {
+      create: jest.fn((d) => d),
+      save: jest.fn((d) => Promise.resolve({ id: 1, ...d })),
+      update: jest.fn().mockResolvedValue({ affected: 1 }),
+      findOne: jest.fn(),
+    };
     tutorRepository = {
       findOne: jest.fn(),
       update: jest.fn(),
@@ -36,6 +48,7 @@ describe('TelegramService', () => {
       tutorRepository as never,
       httpService as never,
       { get: jest.fn((key: string) => environment[key]) } as never,
+      mensagemRepository as never,
     );
   });
 
@@ -144,5 +157,51 @@ describe('TelegramService', () => {
         'webhook-secret',
       ),
     ).rejects.toBeInstanceOf(BadGatewayException);
+    expect(mensagemRepository.update).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ status: 'falha' }),
+    );
+  });
+
+  it('logs sent messages with the Telegram message id', async () => {
+    httpService.post.mockReturnValueOnce(
+      of({ data: { ok: true, result: { message_id: 55 } } }),
+    );
+
+    await service.enviarMensagem('1', 'oi');
+
+    expect(mensagemRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ chatId: '1', status: 'enfileirada' }),
+    );
+    expect(mensagemRepository.update).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ status: 'enviada', telegramMessageId: 55 }),
+    );
+  });
+
+  it('marks the message as answered on button click', async () => {
+    mensagemRepository.findOne.mockResolvedValue({ id: 9 });
+
+    await service.processarAtualizacao(
+      {
+        callback_query: {
+          id: 'cb1',
+          data: 'confirmar',
+          message: { message_id: 55, chat: { id: 1 } },
+        },
+      },
+      'webhook-secret',
+    );
+
+    expect(mensagemRepository.update).toHaveBeenCalledWith(
+      9,
+      expect.objectContaining({ status: 'respondida', resposta: 'confirmar' }),
+    );
+  });
+
+  it('rejects webhook calls with a wrong secret', async () => {
+    await expect(
+      service.processarAtualizacao({}, 'wrong-secret'),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });

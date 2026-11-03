@@ -54,6 +54,7 @@ describe('TelegramNotificacoesService', () => {
     expect(telegram.enviarMensagem).toHaveBeenCalledWith(
       '555',
       expect.stringContaining('Rex tem Banho agendado para 03/11, 11:00'),
+      { agendamentoId: 1, tipo: 'lembrete' },
     );
     expect(repository.update).toHaveBeenCalledWith(
       { id: 1, lembrete_enviado_em: expect.anything() },
@@ -69,6 +70,7 @@ describe('TelegramNotificacoesService', () => {
     expect(telegram.enviarMensagem).toHaveBeenCalledWith(
       '555',
       expect.stringContaining('Rex está pronto(a) para a retirada'),
+      { agendamentoId: 1, tipo: 'pronto' },
     );
   });
 

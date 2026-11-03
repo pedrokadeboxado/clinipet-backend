@@ -121,7 +121,10 @@ export class TelegramNotificacoesService {
     if (!reserva.affected) return;
 
     try {
-      await this.telegramService.enviarMensagem(chatId, texto);
+      await this.telegramService.enviarMensagem(chatId, texto, {
+        agendamentoId: agendamento.id,
+        tipo: campo === 'lembrete_enviado_em' ? 'lembrete' : 'pronto',
+      });
     } catch (error) {
       await this.agendamentoRepository.update(agendamento.id, {
         [campo]: null,

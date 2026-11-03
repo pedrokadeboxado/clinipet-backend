@@ -12,12 +12,23 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { firstValueFrom } from 'rxjs';
 import { MoreThan, QueryFailedError, Repository } from 'typeorm';
 import { TutorEntity } from '../tutores/infra/entities/tutor.entity';
-import { TelegramUpdateDto } from './dto/telegram-update.dto';
+import {
+  TelegramCallbackQueryDto,
+  TelegramUpdateDto,
+} from './dto/telegram-update.dto';
+import { TelegramMensagemEntity } from './infra/entities/telegram-mensagem.entity';
 
 const LINK_CODE_TTL_MS = 15 * 60 * 1000;
 
 interface TelegramApiResponse {
   ok: boolean;
+  result?: { message_id?: number };
+}
+
+export interface EnviarMensagemOptions {
+  agendamentoId?: number;
+  tipo?: string;
+  botoes?: { texto: string; data: string }[];
 }
 
 @Injectable()
@@ -27,6 +38,8 @@ export class TelegramService {
     private readonly tutorRepository: Repository<TutorEntity>,
     private readonly httpService: HttpService,
     private readonly config: ConfigService,
+    @InjectRepository(TelegramMensagemEntity)
+    private readonly mensagemRepository: Repository<TelegramMensagemEntity>,
   ) {}
 
   async criarCodigoVinculacao(
@@ -39,6 +52,10 @@ export class TelegramService {
       'TELEGRAM_LINKING_SECRET não está configurado.',
     );
 
+    return this.gerarCodigoVinculacao(tutorId);
+  }
+
+  async gerarCodigoVinculacao(tutorId: number) {
     const tutor = await this.tutorRepository.findOne({
       where: { id: tutorId },
     });
@@ -65,6 +82,11 @@ export class TelegramService {
       webhookSecret,
       'TELEGRAM_WEBHOOK_SECRET não está configurado.',
     );
+
+    if (update.callback_query) {
+      await this.processarCallback(update.callback_query);
+      return;
+    }
 
     const message = update.message;
     const text = message?.text?.trim();
@@ -152,7 +174,11 @@ export class TelegramService {
     );
   }
 
-  async enviarMensagem(chatId: string, text: string): Promise<void> {
+  async enviarMensagem(
+    chatId: string,
+    text: string,
+    options: EnviarMensagemOptions = {},
+  ): Promise<void> {
     const token = this.config.get<string>('TELEGRAM_BOT_TOKEN');
     if (!token) {
       throw new InternalServerErrorException(
@@ -160,16 +186,40 @@ export class TelegramService {
       );
     }
 
+    const registro = await this.registrar({
+      chatId,
+      texto: text,
+      status: 'enfileirada',
+      agendamentoId: options.agendamentoId ?? null,
+      tipo: options.tipo ?? null,
+    });
+
+    const body: Record<string, unknown> = { chat_id: chatId, text };
+    if (options.botoes?.length) {
+      body.reply_markup = {
+        inline_keyboard: [
+          options.botoes.map((b) => ({
+            text: b.texto,
+            callback_data: b.data,
+          })),
+        ],
+      };
+    }
+
     let response;
     try {
       response = await firstValueFrom(
         this.httpService.post<TelegramApiResponse>(
           `https://api.telegram.org/bot${token}/sendMessage`,
-          { chat_id: chatId, text },
+          body,
           { timeout: 10_000 },
         ),
       );
     } catch (error) {
+      await this.atualizarRegistro(registro, {
+        status: 'falha',
+        erro: error instanceof Error ? error.message : String(error),
+      });
       throw new BadGatewayException(
         'Não foi possível enviar a mensagem pelo Telegram.',
         { cause: error },
@@ -177,7 +227,77 @@ export class TelegramService {
     }
 
     if (!response.data.ok) {
+      await this.atualizarRegistro(registro, {
+        status: 'falha',
+        erro: 'Telegram recusou o envio',
+      });
       throw new BadGatewayException('O Telegram recusou o envio da mensagem.');
+    }
+
+    await this.atualizarRegistro(registro, {
+      status: 'enviada',
+      telegramMessageId: response.data.result?.message_id ?? null,
+      enviadaEm: new Date(),
+    });
+  }
+
+  private async processarCallback(
+    callback: TelegramCallbackQueryDto,
+  ): Promise<void> {
+    const chatId = callback.message ? String(callback.message.chat.id) : null;
+    if (chatId && callback.message) {
+      const registro = await this.mensagemRepository.findOne({
+        where: {
+          chatId,
+          telegramMessageId: callback.message.message_id,
+        },
+      });
+      if (registro) {
+        await this.atualizarRegistro(registro, {
+          status: 'respondida',
+          resposta: callback.data?.slice(0, 255) ?? null,
+          respondidaEm: new Date(),
+        });
+      }
+    }
+
+    // Remove o indicador de carregamento do botão no cliente.
+    const token = this.config.get<string>('TELEGRAM_BOT_TOKEN');
+    if (!token) return;
+    try {
+      await firstValueFrom(
+        this.httpService.post(
+          `https://api.telegram.org/bot${token}/answerCallbackQuery`,
+          { callback_query_id: callback.id },
+          { timeout: 10_000 },
+        ),
+      );
+    } catch {
+      // A resposta já foi registrada; falha aqui é apenas cosmética.
+    }
+  }
+
+  private async registrar(
+    dados: Partial<TelegramMensagemEntity>,
+  ): Promise<TelegramMensagemEntity | null> {
+    try {
+      return await this.mensagemRepository.save(
+        this.mensagemRepository.create(dados),
+      );
+    } catch {
+      return null;
+    }
+  }
+
+  private async atualizarRegistro(
+    registro: TelegramMensagemEntity | null,
+    dados: Partial<TelegramMensagemEntity>,
+  ): Promise<void> {
+    if (!registro) return;
+    try {
+      await this.mensagemRepository.update(registro.id, dados);
+    } catch {
+      // O log de envio não deve interromper o fluxo principal.
     }
   }
 

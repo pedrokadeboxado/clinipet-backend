@@ -16,7 +16,35 @@ export class TelegramMessageDto {
   text?: string;
 }
 
+export class TelegramCallbackMessageDto {
+  @IsInt()
+  message_id!: number;
+
+  @ValidateNested()
+  @Type(() => TelegramChatDto)
+  chat!: TelegramChatDto;
+}
+
+export class TelegramCallbackQueryDto {
+  @IsString()
+  id!: string;
+
+  @IsOptional()
+  @IsString()
+  data?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TelegramCallbackMessageDto)
+  message?: TelegramCallbackMessageDto;
+}
+
 export class TelegramUpdateDto {
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TelegramCallbackQueryDto)
+  callback_query?: TelegramCallbackQueryDto;
+
   @IsOptional()
   @ValidateNested()
   @Type(() => TelegramMessageDto)
