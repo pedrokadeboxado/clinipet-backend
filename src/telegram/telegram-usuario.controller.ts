@@ -2,7 +2,7 @@ import { Controller, Param, ParseIntPipe, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { TelegramService } from './telegram.service';
 
-@ApiTags('Usuarios')
+@ApiTags('Tutores')
 @Controller('usuarios')
 export class TelegramUsuarioController {
   constructor(private readonly telegramService: TelegramService) {}
