@@ -14,7 +14,7 @@ services:
     healthCheckPath: /docs
     envVars:
       - key: NODE_VERSION
-        value: 22
+        value: "22"
       - key: DB_HOST
         fromDatabase:
           name: clinipet-db
