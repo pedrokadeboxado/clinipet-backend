@@ -1,12 +1,16 @@
 import { Inject } from '@nestjs/common';
+import { TelegramConfirmacaoService } from '../../../telegram/telegram-confirmacao.service';
 import { PetVacinaEntity } from '../../infra/entities/petVacina.entity';
 import type { PetVacinaRepositoryInterface } from '../../models/interface/petVacinaRepositoryInterface';
 export class CreatePetVacinaUseCase {
   constructor(
     @Inject('PetVacinaRepositoryInterface')
     private readonly repository: PetVacinaRepositoryInterface,
+    private readonly confirmacao: TelegramConfirmacaoService,
   ) {}
-  execute(data: Partial<PetVacinaEntity>) {
-    return this.repository.create(data);
+  async execute(data: Partial<PetVacinaEntity>) {
+    const registro = await this.repository.create(data);
+    await this.confirmacao.confirmarVacinacao(registro.id);
+    return registro;
   }
 }

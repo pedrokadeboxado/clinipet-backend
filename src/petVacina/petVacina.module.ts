@@ -12,8 +12,9 @@ import { ListAllPetVacinasController } from './usecases/listAllPetVacinas/listAl
 import { FindOnePetVacinaByIdController } from './usecases/findOnePetVacinaById/findOnePetVacinaById.controller';
 import { UpdatePetVacinaController } from './usecases/updatePetVacina/updatePetVacina.controller';
 import { DeletePetVacinaController } from './usecases/deletePetVacina/deletePetVacina.controller';
+import { TelegramModule } from '../telegram/telegram.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([PetVacinaEntity])],
+  imports: [TypeOrmModule.forFeature([PetVacinaEntity]), TelegramModule],
   controllers: [
     CreatePetVacinaController,
     ListAllPetVacinasController,

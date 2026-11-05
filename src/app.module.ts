@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppService } from './app.service';
 import { AdminModule } from './admin/admin.module';
@@ -10,23 +11,41 @@ import { PetVacinaModule } from './petVacina/petVacina.module';
 import { AgendamentosModule } from './agendamentos/agendamentos.module';
 import { ServicesModule } from './servicos/services.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
+import { RacasModule } from './racas/racas.module';
+import { TelegramModule } from './telegram/telegram.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['.env', 'test/.env'],
+    }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST'),
-        port: Number(configService.get<string>('DB_PORT')),
-        username: configService.get<string>('DB_USERNAME'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_DATABASE'),
-        autoLoadEntities: true,
-        synchronize: true,
-      }),
+      useFactory: (configService: ConfigService) => {
+        const dbPassword = configService.get<string>('DB_PASSWORD');
+
+        if (!dbPassword) {
+          throw new Error(
+            'DB_PASSWORD is missing. Check the .env file at the project root or under test/.env.',
+          );
+        }
+
+        return {
+          type: 'postgres',
+          host: configService.get<string>('DB_HOST'),
+          port: Number(configService.get<string>('DB_PORT') ?? 5432),
+          username: configService.get<string>('DB_USERNAME'),
+          password: dbPassword,
+          database: configService.get<string>('DB_DATABASE'),
+          autoLoadEntities: true,
+          synchronize: false,
+          migrations: [__dirname + '/database/migrations/*.{ts,js}'],
+          migrationsRun: true,
+        };
+      },
     }),
+    ScheduleModule.forRoot(),
     AdminModule,
     TutoresModule,
     PetsModule,
@@ -36,7 +55,9 @@ import { UsuariosModule } from './usuarios/usuarios.module';
     ServicesModule,
     // MessagesModule,
     UsuariosModule,
+    RacasModule,
+    TelegramModule,
   ],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

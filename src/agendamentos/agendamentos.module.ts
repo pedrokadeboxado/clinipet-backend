@@ -12,8 +12,9 @@ import { ListAllAgendamentosController } from './usecases/listAllAgendamentos/li
 import { FindOneAgendamentoByIdController } from './usecases/findOneAgendamentoById/findOneAgendamentoById.controller';
 import { UpdateAgendamentoController } from './usecases/updateAgendamento/updateAgendamento.controller';
 import { DeleteAgendamentoController } from './usecases/deleteAgendamento/deleteAgendamento.controller';
+import { TelegramModule } from '../telegram/telegram.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([AgendamentoEntity])],
+  imports: [TypeOrmModule.forFeature([AgendamentoEntity]), TelegramModule],
   controllers: [
     CreateAgendamentoController,
     ListAllAgendamentosController,

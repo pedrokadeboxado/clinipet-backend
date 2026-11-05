@@ -12,8 +12,8 @@ export class ServiceEntity {
   @Column({ name: 'duracao_min', type: 'varchar' })
   duracao_min: string;
 
-  @Column({ type: 'varchar' })
-  valor: string;
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  valor: number;
 
   @OneToMany(() => AgendamentoEntity, (agendamento) => agendamento.service)
   agendamentos: AgendamentoEntity[];

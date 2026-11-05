@@ -1,0 +1,338 @@
+import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
+import {
+  BadGatewayException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { firstValueFrom } from 'rxjs';
+import { MoreThan, QueryFailedError, Repository } from 'typeorm';
+import { TutorEntity } from '../tutores/infra/entities/tutor.entity';
+import {
+  TelegramCallbackQueryDto,
+  TelegramUpdateDto,
+} from './dto/telegram-update.dto';
+import { TelegramMensagemEntity } from './infra/entities/telegram-mensagem.entity';
+
+const LINK_CODE_TTL_MS = 15 * 60 * 1000;
+
+interface TelegramApiResponse {
+  ok: boolean;
+  result?: { message_id?: number };
+}
+
+export interface EnviarMensagemOptions {
+  agendamentoId?: number;
+  tipo?: string;
+  botoes?: { texto: string; data: string }[];
+}
+
+@Injectable()
+export class TelegramService {
+  private readonly logger = new Logger(TelegramService.name);
+
+  constructor(
+    @InjectRepository(TutorEntity)
+    private readonly tutorRepository: Repository<TutorEntity>,
+    private readonly httpService: HttpService,
+    private readonly config: ConfigService,
+    @InjectRepository(TelegramMensagemEntity)
+    private readonly mensagemRepository: Repository<TelegramMensagemEntity>,
+  ) {}
+
+  async criarCodigoVinculacao(
+    tutorId: number,
+    linkingSecret: string | undefined,
+  ) {
+    this.validarSegredo(
+      this.config.get<string>('TELEGRAM_LINKING_SECRET'),
+      linkingSecret,
+      'TELEGRAM_LINKING_SECRET não está configurado.',
+    );
+
+    return this.gerarCodigoVinculacao(tutorId);
+  }
+
+  async gerarCodigoVinculacao(tutorId: number) {
+    const tutor = await this.tutorRepository.findOne({
+      where: { id: tutorId },
+    });
+    if (!tutor) throw new NotFoundException('Tutor não encontrado');
+
+    const code = randomBytes(24).toString('base64url');
+    const expiresAt = new Date(Date.now() + LINK_CODE_TTL_MS);
+    const updateResult = await this.tutorRepository.update(tutorId, {
+      telegramLinkCodeHash: this.hashCode(code),
+      telegramLinkCodeExpiresAt: expiresAt,
+    });
+    if (!updateResult.affected)
+      throw new NotFoundException('Tutor não encontrado');
+
+    return { code, expiresAt };
+  }
+
+  async processarAtualizacao(
+    update: TelegramUpdateDto,
+    webhookSecret: string | undefined,
+  ): Promise<void> {
+    this.validarSegredo(
+      this.config.get<string>('TELEGRAM_WEBHOOK_SECRET'),
+      webhookSecret,
+      'TELEGRAM_WEBHOOK_SECRET não está configurado.',
+    );
+
+    if (update.callback_query) {
+      await this.processarCallback(update.callback_query);
+      return;
+    }
+
+    const message = update.message;
+    const text = message?.text?.trim();
+    if (!message || !text) return;
+
+    const startCommand = text.match(/^\/start(?:@\w+)?(?:\s+(.+))?$/i);
+    const code = startCommand ? startCommand[1]?.trim() : text;
+    const chatId = String(message.chat.id);
+
+    if (!code) {
+      await this.responderVinculo(
+        chatId,
+        'Olá! Para vincular sua conta, solicite um código à equipe da CliniPet e envie-o aqui.',
+      );
+      return;
+    }
+
+    const codeHash = this.hashCode(code);
+    const now = new Date();
+    const tutor = await this.tutorRepository.findOne({
+      where: {
+        telegramLinkCodeHash: codeHash,
+        telegramLinkCodeExpiresAt: MoreThan(now),
+      },
+    });
+
+    if (!tutor) {
+      await this.responderVinculo(
+        chatId,
+        'Código inválido ou expirado. Solicite um novo código à equipe da CliniPet.',
+      );
+      return;
+    }
+
+    const existingTutor = await this.tutorRepository.findOne({
+      where: { telegramChatId: chatId },
+    });
+    if (existingTutor && existingTutor.id !== tutor.id) {
+      await this.responderVinculo(
+        chatId,
+        'Esta conta do Telegram já está vinculada a outro tutor. Entre em contato com a equipe da CliniPet.',
+      );
+      return;
+    }
+
+    let updateResult;
+    try {
+      updateResult = await this.tutorRepository.update(
+        {
+          id: tutor.id,
+          telegramLinkCodeHash: codeHash,
+          telegramLinkCodeExpiresAt: MoreThan(now),
+        },
+        {
+          telegramChatId: chatId,
+          telegramLinkCodeHash: null,
+          telegramLinkCodeExpiresAt: null,
+        },
+      );
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        error.driverError?.code === '23505'
+      ) {
+        await this.responderVinculo(
+          chatId,
+          'Esta conta do Telegram já está vinculada a outro tutor. Entre em contato com a equipe da CliniPet.',
+        );
+        return;
+      }
+      throw error;
+    }
+
+    if (!updateResult.affected) {
+      await this.responderVinculo(
+        chatId,
+        'Código inválido ou expirado. Solicite um novo código à equipe da CliniPet.',
+      );
+      return;
+    }
+
+    await this.responderVinculo(
+      chatId,
+      `Telegram vinculado com sucesso, ${tutor.nome}! Você receberá por aqui os avisos da CliniPet.`,
+    );
+  }
+
+  private responderVinculo(chatId: string, text: string) {
+    return this.enviarMensagem(chatId, text, { tipo: 'vinculo' });
+  }
+
+  async enviarMensagem(
+    chatId: string,
+    text: string,
+    options: EnviarMensagemOptions = {},
+  ): Promise<void> {
+    const token = this.config.get<string>('TELEGRAM_BOT_TOKEN');
+    if (!token) {
+      throw new InternalServerErrorException(
+        'TELEGRAM_BOT_TOKEN não está configurado.',
+      );
+    }
+
+    const registro = await this.registrar({
+      chatId,
+      texto: text,
+      status: 'enfileirada',
+      agendamentoId: options.agendamentoId ?? null,
+      tipo: options.tipo ?? null,
+    });
+
+    const body: Record<string, unknown> = { chat_id: chatId, text };
+    if (options.botoes?.length) {
+      body.reply_markup = {
+        inline_keyboard: [
+          options.botoes.map((b) => ({
+            text: b.texto,
+            callback_data: b.data,
+          })),
+        ],
+      };
+    }
+
+    let response;
+    try {
+      response = await firstValueFrom(
+        this.httpService.post<TelegramApiResponse>(
+          `https://api.telegram.org/bot${token}/sendMessage`,
+          body,
+          { timeout: 10_000 },
+        ),
+      );
+    } catch (error) {
+      await this.atualizarRegistro(registro, {
+        status: 'falha',
+        erro: error instanceof Error ? error.message : String(error),
+      });
+      throw new BadGatewayException(
+        'Não foi possível enviar a mensagem pelo Telegram.',
+        { cause: error },
+      );
+    }
+
+    if (!response.data.ok) {
+      await this.atualizarRegistro(registro, {
+        status: 'falha',
+        erro: 'Telegram recusou o envio',
+      });
+      throw new BadGatewayException('O Telegram recusou o envio da mensagem.');
+    }
+
+    await this.atualizarRegistro(registro, {
+      status: 'enviada',
+      telegramMessageId: response.data.result?.message_id ?? null,
+      enviadaEm: new Date(),
+    });
+  }
+
+  private async processarCallback(
+    callback: TelegramCallbackQueryDto,
+  ): Promise<void> {
+    const chatId = callback.message ? String(callback.message.chat.id) : null;
+    if (chatId && callback.message) {
+      const registro = await this.mensagemRepository.findOne({
+        where: {
+          chatId,
+          telegramMessageId: callback.message.message_id,
+        },
+      });
+      if (registro) {
+        await this.atualizarRegistro(registro, {
+          status: 'respondida',
+          resposta: callback.data?.slice(0, 255) ?? null,
+          respondidaEm: new Date(),
+        });
+      }
+    }
+
+    // Remove o indicador de carregamento do botão no cliente.
+    const token = this.config.get<string>('TELEGRAM_BOT_TOKEN');
+    if (!token) return;
+    try {
+      await firstValueFrom(
+        this.httpService.post(
+          `https://api.telegram.org/bot${token}/answerCallbackQuery`,
+          { callback_query_id: callback.id },
+          { timeout: 10_000 },
+        ),
+      );
+    } catch {
+      // A resposta já foi registrada; falha aqui é apenas cosmética.
+    }
+  }
+
+  private async registrar(
+    dados: Partial<TelegramMensagemEntity>,
+  ): Promise<TelegramMensagemEntity | null> {
+    try {
+      return await this.mensagemRepository.save(
+        this.mensagemRepository.create(dados),
+      );
+    } catch (error) {
+      this.logger.error('Falha ao gravar mensagem do Telegram no banco', error);
+      return null;
+    }
+  }
+
+  private async atualizarRegistro(
+    registro: TelegramMensagemEntity | null,
+    dados: Partial<TelegramMensagemEntity>,
+  ): Promise<void> {
+    if (!registro) return;
+    try {
+      await this.mensagemRepository.update(registro.id, dados);
+    } catch (error) {
+      this.logger.error(
+        `Falha ao atualizar o registro ${registro.id} do Telegram`,
+        error,
+      );
+    }
+  }
+
+  private hashCode(code: string): string {
+    return createHash('sha256').update(code).digest('hex');
+  }
+
+  private validarSegredo(
+    expected: string | undefined,
+    received: string | undefined,
+    missingConfigMessage: string,
+  ): void {
+    if (!expected) {
+      throw new InternalServerErrorException(missingConfigMessage);
+    }
+    if (!received) throw new UnauthorizedException('Segredo inválido');
+
+    const expectedBuffer = Buffer.from(expected);
+    const receivedBuffer = Buffer.from(received);
+    if (
+      expectedBuffer.length !== receivedBuffer.length ||
+      !timingSafeEqual(expectedBuffer, receivedBuffer)
+    ) {
+      throw new UnauthorizedException('Segredo inválido');
+    }
+  }
+}
