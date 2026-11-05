@@ -3,6 +3,7 @@ import {
   BadGatewayException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -33,6 +34,8 @@ export interface EnviarMensagemOptions {
 
 @Injectable()
 export class TelegramService {
+  private readonly logger = new Logger(TelegramService.name);
+
   constructor(
     @InjectRepository(TutorEntity)
     private readonly tutorRepository: Repository<TutorEntity>,
@@ -97,7 +100,7 @@ export class TelegramService {
     const chatId = String(message.chat.id);
 
     if (!code) {
-      await this.enviarMensagem(
+      await this.responderVinculo(
         chatId,
         'Olá! Para vincular sua conta, solicite um código à equipe da CliniPet e envie-o aqui.',
       );
@@ -114,7 +117,7 @@ export class TelegramService {
     });
 
     if (!tutor) {
-      await this.enviarMensagem(
+      await this.responderVinculo(
         chatId,
         'Código inválido ou expirado. Solicite um novo código à equipe da CliniPet.',
       );
@@ -125,7 +128,7 @@ export class TelegramService {
       where: { telegramChatId: chatId },
     });
     if (existingTutor && existingTutor.id !== tutor.id) {
-      await this.enviarMensagem(
+      await this.responderVinculo(
         chatId,
         'Esta conta do Telegram já está vinculada a outro tutor. Entre em contato com a equipe da CliniPet.',
       );
@@ -151,7 +154,7 @@ export class TelegramService {
         error instanceof QueryFailedError &&
         error.driverError?.code === '23505'
       ) {
-        await this.enviarMensagem(
+        await this.responderVinculo(
           chatId,
           'Esta conta do Telegram já está vinculada a outro tutor. Entre em contato com a equipe da CliniPet.',
         );
@@ -161,17 +164,21 @@ export class TelegramService {
     }
 
     if (!updateResult.affected) {
-      await this.enviarMensagem(
+      await this.responderVinculo(
         chatId,
         'Código inválido ou expirado. Solicite um novo código à equipe da CliniPet.',
       );
       return;
     }
 
-    await this.enviarMensagem(
+    await this.responderVinculo(
       chatId,
       `Telegram vinculado com sucesso, ${tutor.nome}! Você receberá por aqui os avisos da CliniPet.`,
     );
+  }
+
+  private responderVinculo(chatId: string, text: string) {
+    return this.enviarMensagem(chatId, text, { tipo: 'vinculo' });
   }
 
   async enviarMensagem(
@@ -284,7 +291,8 @@ export class TelegramService {
       return await this.mensagemRepository.save(
         this.mensagemRepository.create(dados),
       );
-    } catch {
+    } catch (error) {
+      this.logger.error('Falha ao gravar mensagem do Telegram no banco', error);
       return null;
     }
   }
@@ -296,8 +304,11 @@ export class TelegramService {
     if (!registro) return;
     try {
       await this.mensagemRepository.update(registro.id, dados);
-    } catch {
-      // O log de envio não deve interromper o fluxo principal.
+    } catch (error) {
+      this.logger.error(
+        `Falha ao atualizar o registro ${registro.id} do Telegram`,
+        error,
+      );
     }
   }
 

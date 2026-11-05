@@ -8,18 +8,17 @@ import {
 } from 'typeorm';
 import { PetEntity } from '../../../pets/infra/entities/pet.entity';
 import { VacinaEntity } from '../../../vacinas/infra/entities/vacina.entity';
-import { MessageEntity } from '../../../messages/infra/entities/message.entity';
 
 @Entity({ name: 'pet_vacina' })
 export class PetVacinaEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'data_aplicacao', type: 'date' })
-  data_aplicacao: Date
+  @Column({ name: 'data_aplicacao', type: 'timestamptz' })
+  data_aplicacao: Date;
 
-  @Column({ name: 'data_proxima_dose', type: 'date' })
-  data_proxima_dose: Date;
+  @Column({ name: 'data_proxima_dose', type: 'timestamptz', nullable: true })
+  data_proxima_dose: Date | null;
 
   @ManyToOne(() => PetEntity, (pet) => pet.petVacinas, {
     nullable: false,
@@ -40,7 +39,4 @@ export class PetVacinaEntity {
 
   @Column({ name: 'id_vacina', type: 'integer' })
   id_vacina: number;
-
-  // @OneToMany(() => MessageEntity, (message) => message.petVacina)
-  // messages: MessageEntity[];
 }
